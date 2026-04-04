@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GrowthBot — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080B10;
+      --surface: #0E1420;
+      --surface2: #131B28;
+      --border: #1E2A3A;
+      --accent: #00F0FF;
+      --accent2: #7B61FF;
+      --green: #00FF88;
+      --red: #FF4F6A;
+      --yellow: #FFD166;
+      --text: #E8EDF5;
+      --muted: #5A6A80;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 20px;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 17px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    .nav-section {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding-left: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .nav-item.active { color: var(--accent); }
+
+    .sidebar-bottom {
+      margin-top: auto;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      display: inline-block;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .bot-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .logout-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Main Content */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .page-header p { color: var(--muted); font-size: 13px; }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .stat-card:nth-child(1)::before { background: var(--accent); }
+    .stat-card:nth-child(2)::before { background: var(--accent2); }
+    .stat-card:nth-child(3)::before { background: var(--green); }
+    .stat-card:nth-child(4)::before { background: var(--yellow); }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 32px;
+      letter-spacing: -1px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    /* Button */
+    .btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #080B10;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-danger {
+      background: transparent;
+      border: 1px solid rgba(255,79,106,0.3);
+      color: var(--red);
+    }
+
+    .btn-danger:hover { background: rgba(255,79,106,0.1); }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .form-input, .form-textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .form-textarea { resize: vertical; min-height: 80px; }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Server List */
+    .server-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--surface2);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .server-avatar {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+
+    .server-info { flex: 1; min-width: 0; }
+
+    .server-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .server-id {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .server-actions { display: flex; gap: 8px; align-items: center; }
+
+    .toggle {
+      position: relative;
+      width: 40px; height: 22px;
+      cursor: pointer;
+    }
+
+    .toggle input { display: none; }
+
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 11px;
+      transition: background 0.2s;
+    }
+
+    .toggle input:checked + .toggle-track { background: var(--green); }
+
+    .toggle-thumb {
+      position: absolute;
+      width: 16px; height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform 0.2s;
+      pointer-events: none;
+    }
+
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+    /* Logs Table */
+    .log-table { width: 100%; border-collapse: collapse; }
+
+    .log-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .log-table td {
+      padding: 10px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(30,42,58,0.5);
+    }
+
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-green { background: rgba(0,255,136,0.1); color: var(--green); }
+    .badge-red { background: rgba(255,79,106,0.1); color: var(--red); }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+    }
+
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty p { font-size: 13px; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8,11,16,0.85);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 520px;
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .modal-close {
+      background: none; border: none;
+      color: var(--muted); font-size: 20px;
+      cursor: pointer; line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 13px;
+      z-index: 200;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(0,255,136,0.3); color: var(--green); }
+    .toast.error { border-color: rgba(255,79,106,0.3); color: var(--red); }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Growth<span>Bot</span></div>
+    </div>
+
+    <div class="nav-section">Menu</div>
+    <div class="nav-item active" onclick="showPage('overview')">📊 Overview</div>
+    <div class="nav-item" onclick="showPage('servers')">🌐 Servers</div>
+    <div class="nav-item" onclick="showPage('logs')">📋 Activity Logs</div>
+
+    <div class="sidebar-bottom">
+      <div class="bot-status">
+        <span class="status-dot"></span>
+        <span>Bot Online</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">← Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Overview Page -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <h1>Overview</h1>
+        <p>Your bot's performance at a glance</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Servers</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Servers</div>
+          <div class="stat-value" id="stat-active">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Invites Sent</div>
+          <div class="stat-value" id="stat-invites">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Joins Today</div>
+          <div class="stat-value" id="stat-today">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Activity</div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('logs')">View all →</button>
+        </div>
+        <div id="recent-activity"></div>
+      </div>
+    </div>
+
+    <!-- Servers Page -->
+    <div class="page" id="page-servers">
+      <div class="page-header">
+        <h1>Servers</h1>
+        <p>Manage which servers your bot monitors</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Connected Servers</div>
+          <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Server</button>
+        </div>
+        <div id="servers-list"></div>
+      </div>
+    </div>
+
+    <!-- Logs Page -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <h1>Activity Logs</h1>
+        <p>Every join event tracked by your bot</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Events</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadLogs()">↻ Refresh</button>
+        </div>
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Server</th>
+              <th>Invite Sent</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="logs-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Add Server Modal -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add Server</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Server ID *</label>
+          <input class="form-input" id="input-guildId" placeholder="e.g. 123456789012345678" />
+          <div class="form-hint">Right-click your server → Copy Server ID</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Server Name</label>
+          <input class="form-input" id="input-name" placeholder="My Discord Server" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Your Invite Link *</label>
+          <input class="form-input" id="input-inviteLink" placeholder="https://discord.gg/yourlink" />
+          <div class="form-hint">Members who join this server will be sent this invite</div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Custom Welcome Message</label>
+          <textarea class="form-textarea" id="input-welcomeMessage"
+            placeholder="Use {username}, {server}, {invite} as placeholders. Leave blank for default."></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="addServer()">Add Server</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Navigation ────────────────────────────────────────
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if (name === 'overview') loadOverview();
+      if (name === 'servers') loadServers();
+      if (name === 'logs') loadLogs();
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    // ── Overview ──────────────────────────────────────────
+    async function loadOverview() {
+      const [stats, logs] = await Promise.all([
+        fetch('/api/stats').then(r => r.json()),
+        fetch('/api/logs?limit=5').then(r => r.json())
+      ]);
+
+      document.getElementById('stat-total').textContent = stats.totalServers;
+      document.getElementById('stat-active').textContent = stats.activeServers;
+      document.getElementById('stat-invites').textContent = stats.totalInvitesSent;
+      document.getElementById('stat-today').textContent = stats.todayJoins;
+
+      const el = document.getElementById('recent-activity');
+      if (!logs.length) {
+        el.innerHTML = '<div class="empty"><div class="empty-icon">🕐</div><p>No activity yet. Add a server to get started.</p></div>';
+        return;
+      }
+      el.innerHTML = logs.map(log => `
+        <div class="server-item">
+          <div style="font-size:22px">👤</div>
+          <div class="server-info">
+            <div class="server-name">${log.username}</div>
+            <div class="server-id">Joined ${log.guildName}</div>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">${timeAgo(log.timestamp)}</div>
+        </div>
+      `).join('');
+    }
+
+    // ── Servers ───────────────────────────────────────────
+    async function loadServers() {
+      const servers = await fetch('/api/servers').then(r => r.json());
+      const el = document.getElementById('servers-list');
+
+      if (!servers.length) {
+        el.innerHTML = '<div class="empty"><div class="empty-icon">🌐</div><p>No servers added yet. Click "Add Server" to get started.</p></div>';
+        return;
+      }
+
+      el.innerHTML = servers.map(s => `
+        <div class="server-item" id="server-${s.guildId}">
+          <div class="server-avatar">🏠</div>
+          <div class="server-info">
+            <div class="server-name">${s.name || 'Unnamed Server'}</div>
+            <div class="server-id">ID: ${s.guildId} · ${s.inviteLink}</div>
+          </div>
+          <div class="server-actions">
+            <label class="toggle">
+              <input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleServer('${s.guildId}')"/>
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+            <button class="btn btn-danger btn-sm" onclick="deleteServer('${s.guildId}')">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openAddModal() {
+      document.getElementById('add-modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('add-modal').classList.remove('open');
+      ['guildId','name','inviteLink','welcomeMessage'].forEach(f => {
+        document.getElementById('input-' + f).value = '';
+      });
+    }
+
+    async function addServer() {
+      const guildId = document.getElementById('input-guildId').value.trim();
+      const name = document.getElementById('input-name').value.trim();
+      const inviteLink = document.getElementById('input-inviteLink').value.trim();
+      const welcomeMessage = document.getElementById('input-welcomeMessage').value.trim();
+
+      if (!guildId || !inviteLink) {
+        showToast('Server ID and Invite Link are required', 'error');
+        return;
+      }
+
+      const res = await fetch('/api/servers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guildId, name, inviteLink, welcomeMessage })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast('Server added successfully!');
+        closeModal();
+        loadServers();
+        loadOverview();
+      } else {
+        showToast(data.error || 'Something went wrong', 'error');
+      }
+    }
+
+    async function toggleServer(guildId) {
+      await fetch(`/api/servers/${guildId}/toggle`, { method: 'PATCH' });
+      showToast('Server status updated');
+    }
+
+    async function deleteServer(guildId) {
+      if (!confirm('Remove this server from the bot?')) return;
+      await fetch(`/api/servers/${guildId}`, { method: 'DELETE' });
+      showToast('Server removed');
+      loadServers();
+    }
+
+    // ── Logs ──────────────────────────────────────────────
+    async function loadLogs() {
+      const logs = await fetch('/api/logs').then(r => r.json());
+      const body = document.getElementById('logs-body');
+
+      if (!logs.length) {
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No logs yet</td></tr>';
+        return;
+      }
+
+      body.innerHTML = logs.map(log => `
+        <tr>
+          <td>${log.username}</td>
+          <td>${log.guildName || log.guildId}</td>
+          <td>
+            <span class="badge ${log.inviteSent ? 'badge-green' : 'badge-red'}">
+              ${log.inviteSent ? '✓ Sent' : '✗ Failed'}
+            </span>
+          </td>
+          <td style="color:var(--muted)">${new Date(log.timestamp).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    // ── Logout ────────────────────────────────────────────
+    async function logout() {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/login';
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+    function timeAgo(timestamp) {
+      const diff = Date.now() - new Date(timestamp).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    loadOverview();
+  </script>
+</body>
+</html>
