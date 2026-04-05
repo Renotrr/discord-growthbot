@@ -1,32 +1,40 @@
-const { Client, GatewayIntentBits, Events } = require('discord.js');
+const { Client, GatewayIntentBits, Events, Partials } = require('discord.js');
 const storage = require('./storage');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.DirectMessages
-  ]
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
 });
 
 client.once(Events.ClientReady, (c) => {
   console.log(`✅ Bot is online as ${c.user.tag}`);
+  console.log(`📡 Watching servers: ${JSON.stringify(Object.keys(storage.getServers()))}`);
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
+  console.log(`👤 Member joined: ${member.user.username} in ${member.guild.name} (${member.guild.id})`);
+  
   const guildId = member.guild.id;
   const serverConfig = storage.getServer(guildId);
 
-  if (!serverConfig || !serverConfig.active) return;
+  console.log(`🔍 Server config found: ${JSON.stringify(serverConfig)}`);
+
+  if (!serverConfig || !serverConfig.active) {
+    console.log(`⚠️ No config or inactive for guild ${guildId}`);
+    return;
+  }
 
   const username = member.user.username;
-  const userId = member.user.id;
   const serverName = member.guild.name;
-
-  console.log(`👤 ${username} joined ${serverName}`);
 
   try {
     const ownerId = process.env.OWNER_DISCORD_ID;
+    console.log(`📨 Sending notification to owner: ${ownerId}`);
     if (ownerId) {
       const owner = await client.users.fetch(ownerId);
       await owner.send(
@@ -34,6 +42,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
         `has joined the server: **${serverName}**\n\n` +
         `Click or tap and hold on the username to copy it`
       );
+      console.log(`✅ Notification sent successfully!`);
     }
   } catch (err) {
     console.warn('⚠️ Could not notify owner:', err.message);
@@ -41,7 +50,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 
   storage.addLog({
     type: 'member_joined',
-    userId,
+    userId: member.user.id,
     username,
     guildId,
     guildName: serverName,
