@@ -44,7 +44,7 @@ Use Node.js and npm. Install dependencies:
 npm install
 ```
 
-Create a local `.env` file with the variables below. Use unique, strong values for the admin password and session secret.
+Copy `.env.example` to `.env` and replace the placeholders. Use unique, strong values for the admin password and session secret.
 
 ```env
 DISCORD_TOKEN=your_discord_bot_token
