@@ -1,153 +1,86 @@
-# ⚡ GrowthBot — Discord Growth Bot
+# Discord GrowthBot (prototype)
 
-A Discord bot that automatically DMs new server members with your invite link, notifies you of joins, and comes with a password-protected admin dashboard.
+A Node.js and Discord.js prototype for managing server onboarding configuration and tracking member-join activity.
 
----
+**Status:** Prototype. The repository is public for code review, but the current implementation is not production-ready and does not yet deliver the complete welcome-DM workflow described in the original concept.
 
-## 🚀 Features
+## What is implemented
 
-- Watches multiple Discord servers
-- DMs new members with your custom invite link
-- Notifies you (the owner) via DM when someone joins
-- Web admin dashboard with login protection
-- Add/remove servers without touching code
-- Toggle servers on/off
-- Full activity logs
-- Customizable welcome messages per server
+- Connects a Discord bot and listens for member-join events.
+- Checks whether the joining member's server has an active configuration.
+- Sends a direct-message notification to the configured owner when a member joins.
+- Records member-join activity in a local JSON data file.
+- Provides Express routes for server configuration, activity logs, and basic statistics.
+- Includes a dashboard and login flow; API routes are guarded by session authentication.
 
----
+## Current limitations
 
-## 📁 Project Structure
+The current `GuildMemberAdd` handler does **not** send the configured invite link or custom welcome message to the new member. The `inviteLink` and `welcomeMessage` fields are stored, but the member-facing DM flow is not implemented in this repository yet.
 
-```
-discord-bot/
-├── index.js              # Entry point
-├── package.json
-├── .env.example          # Copy this to .env and fill in values
-├── src/
-│   ├── bot.js            # Discord bot logic
-│   ├── dashboard.js      # Express web server + API
-│   └── storage.js        # Data storage (JSON file)
-├── dashboard/
-│   └── public/
-│       ├── index.html    # Admin dashboard UI
-│       └── login.html    # Login page
-└── data/
-    └── config.json       # Auto-created, stores your server configs + logs
-```
+There are also security and deployment issues that must be resolved before exposing this prototype to the public internet:
 
----
+- The dashboard code contains fallback values for the admin password and session secret.
+- The static dashboard files are served before the route-level authentication handler, so the dashboard page itself is not fully gated.
+- Session cookies do not yet have production-specific secure settings.
+- The default Express session store is in-memory.
+- Server configuration and activity logs are stored in a local JSON file, which needs persistent storage in a hosted environment.
+- The `dev` script references `nodemon`, which is not currently declared in `package.json`.
 
-## ⚙️ Setup Guide
+Please treat this as an implementation snapshot, not a production deployment template.
 
-### Step 1: Create your Discord Bot
+## Stack
 
-1. Go to https://discord.com/developers/applications
-2. Click **"New Application"** → give it a name
-3. Click **"Bot"** in the left sidebar
-4. Click **"Reset Token"** → copy the token (you'll need this)
-5. Under **"Privileged Gateway Intents"**, enable:
-   - ✅ **Server Members Intent**
-   - ✅ **Message Content Intent**
-6. Go to **"OAuth2" → "URL Generator"**
-   - Scopes: `bot`
-   - Bot Permissions: `Send Messages`, `Read Messages/View Channels`
-   - Copy the generated URL and open it to invite the bot to your servers
+- Node.js
+- Discord.js
+- Express
+- express-session
+- JSON file storage
 
-### Step 2: Get your Discord User ID
+## Run locally
 
-1. Open Discord settings → **Advanced** → Enable **Developer Mode**
-2. Right-click your own username → **"Copy User ID"**
-
-### Step 3: Configure environment variables
-
-1. Copy `.env.example` to `.env`
-2. Fill in all values:
-
-```env
-DISCORD_TOKEN=your_bot_token_from_step_1
-OWNER_DISCORD_ID=your_user_id_from_step_2
-ADMIN_PASSWORD=choose_a_strong_password
-SESSION_SECRET=any_long_random_string_like_this_abc123xyz789
-PORT=3000
-```
-
-### Step 4: Install dependencies
+Use Node.js and npm. Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Step 5: Run locally (for testing)
+Create a local `.env` file with the variables below. Use unique, strong values for the admin password and session secret.
+
+```env
+DISCORD_TOKEN=your_discord_bot_token
+OWNER_DISCORD_ID=your_discord_user_id
+ADMIN_PASSWORD=use_a_strong_unique_password
+SESSION_SECRET=use_a_long_random_secret
+PORT=3000
+```
+
+Start the app:
 
 ```bash
 node index.js
 ```
 
-Visit http://localhost:3000 to see the dashboard.
+The dashboard is served on the configured port.
 
----
+## Project structure
 
-## 🚂 Deploy to Railway
-
-1. Create a free account at https://railway.app
-2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Connect your GitHub and push this code to a repo
-4. In Railway, go to your project → **"Variables"** tab
-5. Add all your `.env` variables there (DISCORD_TOKEN, OWNER_DISCORD_ID, etc.)
-6. Railway will auto-deploy. Your bot URL will be something like `https://your-app.railway.app`
-
----
-
-## 🖥️ Using the Dashboard
-
-1. Open your Railway app URL (or http://localhost:3000)
-2. Log in with your `ADMIN_PASSWORD`
-3. Click **"Add Server"**
-4. Enter:
-   - **Server ID**: Right-click your Discord server → "Copy Server ID" (needs Developer Mode on)
-   - **Server Name**: Just a label for you
-   - **Invite Link**: The Discord invite link you want to send new members
-   - **Custom Message** (optional): Personalize the DM new members receive
-5. The bot will now watch that server and DM every new member!
-
----
-
-## ✉️ Custom Welcome Message
-
-You can personalize the welcome DM using these placeholders:
-
-| Placeholder | What it shows |
-|---|---|
-| `{username}` | The new member's Discord username |
-| `{server}` | The server they just joined |
-| `{invite}` | Your invite link |
-
-**Example:**
-```
-Hey {username}! Welcome to {server} 👋
-
-We also have a main community where everyone hangs out and chats.
-Come join us here: {invite}
-
-See you there! 🚀
+```text
+.
+├── index.js
+├── src/
+│   ├── bot.js
+│   ├── dashboard.js
+│   └── storage.js
+└── dashboard/
+    └── public/
+        ├── index.html
+        └── login.html
 ```
 
----
+## Next engineering priorities
 
-## ➕ Adding New Features Later
-
-The codebase is designed to be extended easily:
-
-- **Bot logic** → edit `src/bot.js`
-- **New API endpoints** → add to `src/dashboard.js`
-- **Dashboard UI** → edit `dashboard/public/index.html`
-- **Data storage** → currently JSON, can be swapped for a real database (MongoDB, PostgreSQL) by updating `src/storage.js`
-
----
-
-## 🔒 Security Notes
-
-- Never commit your `.env` file to GitHub
-- Use a strong `ADMIN_PASSWORD` (not "admin123")
-- The `SESSION_SECRET` should be a long random string
+1. Implement and test the member-facing welcome DM flow.
+2. Remove insecure fallback credentials and require validated environment configuration.
+3. Gate all dashboard content behind authentication and configure secure session cookies.
+4. Replace the in-memory session store and local JSON persistence for a hosted deployment.
+5. Add automated tests for message formatting, event handling, and authentication behavior.
